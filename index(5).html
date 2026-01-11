@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2a2a2a">
+    <meta name="description" content="Alpe d'Huez Conditions de ski - Webcams en direct, météo, état des routes et des pistes">
+    <title>AlpeView - Conditions Ski</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            font-size: 18px;
+            line-height: 1.4;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #252525;
+            border-bottom: 1px solid #3a3a3a;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            z-index: 1000;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            flex: 1;
+            color: #ffffff;
+        }
+
+        .home-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+        }
+
+        .home-btn:hover, .home-btn:active {
+            background-color: #3a3a3a;
+        }
+
+        .main-content {
+            padding-top: 70px;
+            padding-bottom: 90px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 12px;
+            padding: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+            align-content: start;
+        }
+
+        .menu-btn {
+            background-color: #252525;
+            border: 2px solid #404040;
+            color: #ffffff;
+            padding: 20px 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            transition: all 0.2s ease;
+            min-height: 0;
+        }
+
+        .menu-btn:hover, .menu-btn:active {
+            background-color: #353535;
+            border-color: #505050;
+            transform: translateY(-2px);
+        }
+
+        .menu-btn .icon {
+            font-size: 40px;
+            filter: grayscale(10%);
+        }
+
+        .section-page {
+            display: none;
+            padding: 16px;
+        }
+
+        .section-page.active {
+            display: block;
+        }
+
+        .section-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-tab {
+            flex: 1;
+            background-color: #252525;
+            border: 2px solid #404040;
+            color: #c0c0c0;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .section-tab.active {
+            background-color: #353535;
+            border-color: #606060;
+            color: #ffffff;
+        }
+
+        .subsection-page {
+            display: none;
+        }
+
+        .subsection-page.active {
+            display: block;
+        }
+
+        .webcam-grid {
+            display: grid;
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .webcam-card {
+            background-color: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .webcam-card.featured {
+            border: 1px solid #4a7c4a;
+        }
+
+        .webcam-header {
+            padding: 10px 14px;
+            background-color: #2a2a2a;
+            border-bottom: 1px solid #3a3a3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .webcam-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .live-badge {
+            background-color: #c04040;
+            color: #ffffff;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .webcam-video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background-color: #1f1f1f;
+        }
+
+        .webcam-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .webcam-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #222222;
+        }
+
+        .webcam-placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .webcam-placeholder-text {
+            font-size: 14px;
+            color: #a0a0a0;
+            text-align: center;
+            padding: 0 16px;
+        }
+
+        .webcam-link-btn {
+            margin-top: 10px;
+            background-color: #404040;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .webcam-link-btn:active {
+            background-color: #505050;
+        }
+
+        .webcam-time {
+            padding: 6px 14px;
+            font-size: 12px;
+            color: #808080;
+            text-align: right;
+            background-color: #1f1f1f;
+        }
+
+        .map-section {
+            background-color: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .map-header {
+            padding: 10px 14px;
+            background-color: #2a2a2a;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .map-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .map-title .icon,
+        .road-title .icon {
+            font-size: 20px;
+        }
+
+        .map-embed {
+            width: 100%;
+            height: 280px;
+            border: none;
+        }
+
+        .weather-current {
+            background-color: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .weather-main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .weather-temp {
+            font-size: 52px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .weather-icon {
+            font-size: 52px;
+        }
+
+        .weather-details {
+            display: grid;
+            gap: 8px;
+        }
+
+        .weather-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .weather-label {
+            color: #a0a0a0;
+        }
+
+        .weather-value {
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+
+        .weather-forecast {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .forecast-day {
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .forecast-date {
+            font-size: 12px;
+            color: #909090;
+            margin-bottom: 6px;
+        }
+
+        .forecast-icon {
+            font-size: 26px;
+            margin: 6px 0;
+        }
+
+        .forecast-temps {
+            font-size: 14px;
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+
+        .snow-quality {
+            background-color: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .snow-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+
+        .snow-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #3a3a3a;
+        }
+
+        .snow-item:last-child {
+            border-bottom: none;
+        }
+
+        .road-alerts {
+            background-color: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .road-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .status-dot.open {
+            background-color: #60c060;
+        }
+
+        .status-dot.closed {
+            background-color: #c04040;
+        }
+
+        .status-dot.caution {
+            background-color: #c0c040;
+        }
+
+        .status-dot.period {
+            background-color: #c08040;
+        }
+
+        .status-dot.forecast {
+            background-color: #c0c040;
+        }
+
+        .road-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .road-info {
+            color: #a0a0a0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .slopes-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .location-card {
+            background-color: #252525;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .location-header {
+            padding: 12px 14px;
+            background-color: #2a2a2a;
+            border-bottom: 1px solid #3a3a3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .location-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .location-stats {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .location-stats.all-open {
+            background-color: #406040;
+            color: #c0ffc0;
+        }
+
+        .location-stats.partial {
+            background-color: #806040;
+            color: #ffc0a0;
+        }
+
+        .location-stats.most-closed {
+            background-color: #804040;
+            color: #ffc0c0;
+        }
+
+        .lift-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .lift-item:last-child {
+            border-bottom: none;
+        }
+
+        .lift-name {
+            font-size: 14px;
+            color: #d0d0d0;
+        }
+
+        .lift-type {
+            font-size: 11px;
+            color: #808080;
+            margin-left: 8px;
+        }
+
+        .lift-status {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .lift-status.open {
+            background-color: #406040;
+            color: #c0ffc0;
+        }
+
+        .lift-status.closed {
+            background-color: #804040;
+            color: #ffc0c0;
+        }
+
+        .lift-status.period {
+            background-color: #806040;
+            color: #ffc0a0;
+        }
+
+        .lift-status.forecast {
+            background-color: #808040;
+            color: #ffffc0;
+        }
+
+        .refresh-container {
+            position: fixed;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .refresh-btn {
+            width: 100%;
+            background-color: #353535;
+            border: 2px solid #505050;
+            color: #ffffff;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover, .refresh-btn:active {
+            background-color: #404040;
+            border-color: #606060;
+        }
+
+        .refresh-btn.loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .last-updated {
+            text-align: center;
+            padding: 12px;
+            font-size: 12px;
+            color: #505050;
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 24px;
+            font-size: 18px;
+            color: #c0c0c0;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #3a3a3a;
+            border-top-color: #808080;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 14px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .offline-banner {
+            background-color: #404040;
+            color: #ffffff;
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .offline-banner.show {
+            display: block;
+        }
+
+        .info-notice {
+            background-color: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #808080;
+            text-align: center;
+        }
+
+        .info-notice a {
+            color: #c0c0c0;
+            text-decoration: underline;
+        }
+
+        .last-update-info {
+            font-size: 11px;
+            color: #707070;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .page-header-spacer {
+            width: 44px;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-banner" id="offlineBanner">
+        Vous êtes hors ligne. Certaines fonctionnalités peuvent ne pas se mettre à jour.
+    </div>
+
+    <div class="header">
+        <button class="home-btn" onclick="showPage('homePage')" title="Accueil">⌂</button>
+        <div class="header-title" id="headerTitle">AlpeView</div>
+        <div class="page-header-spacer"></div>
+    </div>
+
+    <div class="main-content">
+        <!-- Page d'accueil -->
+        <div class="section-page active" id="homePage">
+            <div class="menu-container">
+                <button class="menu-btn" onclick="showPage('webcamsPage')">
+                    <span class="icon">📷</span>
+                    <span>WEBCAMS</span>
+                </button>
+                <button class="menu-btn" onclick="showPage('roadPage')">
+                    <span class="icon">🛣️</span>
+                    <span>ROUTE</span>
+                </button>
+                <button class="menu-btn" onclick="showPage('weatherPage')">
+                    <span class="icon">🌤️</span>
+                    <span>MÉTÉO</span>
+                </button>
+                <button class="menu-btn" onclick="showPage('slopesPage')">
+                    <span class="icon">⛷️</span>
+                    <span>PISTES</span>
+                </button>
+            </div>
+            <div class="last-updated" id="homeLastUpdated">
+                Dernière mise à jour : --
+            </div>
+        </div>
+
+        <!-- Page Webcams -->
+        <div class="section-page" id="webcamsPage">
+            <div class="info-notice">
+                Streams en direct des pistes de l'Alpe d'Huez. Appuyez sur "VOIR EN DIRECT" pour ouvrir les autres webcams.
+            </div>
+            <div class="webcam-grid" id="slopeWebcams"></div>
+        </div>
+
+        <!-- Page Route/Trafic -->
+        <div class="section-page" id="roadPage">
+            <div class="road-alerts">
+                <div class="road-status">
+                    <div class="status-dot open" id="roadStatusDot"></div>
+                    <span class="road-title"><span class="icon">🛣️</span> Grenoble → Vaujany</span>
+                </div>
+                <div class="road-info" id="roadInfo">
+                    Vérification des conditions de route...
+                </div>
+            </div>
+            
+            <div class="map-section">
+                <div class="map-header">
+                    <div class="map-title">
+                        <span>🚗</span>
+                        <span>Traffic en direct (Waze)</span>
+                    </div>
+                </div>
+                <iframe 
+                    class="map-embed"
+                    src="https://embed.waze.com/iframe?zoom=10&lat=45.169&lon=5.713&ct=livemap"
+                    title="Waze Traffic Map - Grenoble Area"
+                    allow="geolocation">
+                </iframe>
+            </div>
+        </div>
+
+        <!-- Page Météo -->
+        <div class="section-page" id="weatherPage">
+            <div class="weather-current" id="weatherCurrent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Chargement météo...
+                </div>
+            </div>
+
+            <div class="map-section">
+                <div class="map-header">
+                    <div class="map-title">
+                        <span>🗺️</span>
+                        <span>Carte météo (Windy)</span>
+                    </div>
+                </div>
+                <iframe 
+                    class="map-embed"
+                    src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=°C&radarRange=-1&zoom=9&lat=45.09&lon=6.07&detailLat=45.09&detailLon=6.07&detail=&mountain=&traffic=&wind=&clouds=&pressure="
+                    title="Windy Weather Map - Alpe d'Huez"
+                    allow="geolocation">
+                </iframe>
+            </div>
+
+            <div class="map-section">
+                <div class="map-header">
+                    <div class="map-title">
+                        <span>📍</span>
+                        <span>Localisation</span>
+                    </div>
+                </div>
+                <iframe 
+                    class="map-embed"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d44810.678358738!2d6.049999999999999!3d45.09!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4789e0d8c28e9f0f%3A0x407d1d9d2246d30!2sAlpe%20d&#39;Huez!5e0!3m2!1sfr!2sfr!4v1600000000000!5m2!1sfr!2sfr"
+                    title="Alpe d'Huez Location"
+                    style="border:0;"
+                    allowfullscreen=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+
+            <div class="snow-quality" id="snowQuality">
+                <div class="snow-title">Conditions d'enneigement</div>
+                <div class="snow-item">
+                    <span>Enneigement Village</span>
+                    <span id="snowBase">--</span>
+                </div>
+                <div class="snow-item">
+                    <span>Enneigement Sommet</span>
+                    <span id="snowSummit">--</span>
+                </div>
+                <div class="snow-item">
+                    <span>Dernière chute</span>
+                    <span id="lastSnow">--</span>
+                </div>
+                <div class="snow-item">
+                    <span>Qualité neige</span>
+                    <span id="snowQualityVal">--</span>
+                </div>
+            </div>
+
+            <div class="weather-forecast" id="weatherForecast"></div>
+        </div>
+
+        <!-- Page Pistes -->
+        <div class="section-page" id="slopesPage">
+            <div class="info-notice">
+                Source : <a href="https://www.alpedhuez.com/fr/remontees/" target="_blank">alpedhuez.com/remontees</a>
+            </div>
+            <p class="last-update-info" id="liftsLastUpdate">Dernière mise à jour : --</p>
+            <div class="slopes-container" id="liftsContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Chargement état des remontées...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="refresh-container">
+        <button class="refresh-btn" id="refreshBtn" onclick="refreshAllData()">
+            <span>🔄</span>
+            <span>METTRE À JOUR</span>
+        </button>
+    </div>
+
+    <script>
+        let isLoading = false;
+
+        // YouTube Live Webcam
+        const YOUTUBE_LIVE_HERPIE = '7SheNmPKU9E';
+
+        // Webcams des pistes
+        const slopeWebcams = [
+            {
+                name: "L'Herpie EN DIRECT",
+                alt: '2735m - Stream Officiel',
+                youtubeId: YOUTUBE_LIVE_HERPIE,
+                isLive: true,
+                description: 'Haute altitude - 2735m',
+                featured: true
+            },
+            {
+                name: 'Pic Blanc',
+                alt: 'Sommet 3330m',
+                url: 'https://www.alpedhuez.com/fr/webcams-alpe-dhuez/',
+                isLive: false,
+                description: 'Sommet du domaine - 3330m'
+            },
+            {
+                name: "Signal de l'Homme",
+                alt: '2176m - Auris',
+                url: 'https://www.alpedhuez.com/fr/webcams-alpe-dhuez/',
+                isLive: false,
+                description: 'Secteur Auris - 2176m'
+            },
+            {
+                name: 'Le Signal',
+                alt: '2114m',
+                url: 'https://www.alpedhuez.com/fr/webcams-alpe-dhuez/',
+                isLive: false,
+                description: 'Zone Signal - 2114m'
+            },
+            {
+                name: 'Vaujany Montfrais',
+                alt: '1720m',
+                url: 'https://www.vaujany.com/fr/live/webcams/',
+                isLive: false,
+                description: 'Village Vaujany - 1720m'
+            },
+            {
+                name: 'Oz en Oisans',
+                alt: '1350m',
+                url: 'https://www.oz-vaujany.com/hiver/fr/webcams-2/',
+                isLive: false,
+                description: 'Village Oz - 1350m'
+            },
+            {
+                name: 'DMC / 2700m',
+                alt: 'Mi-station',
+                url: 'https://www.alpedhuez.com/fr/webcams-alpe-dhuez/',
+                isLive: false,
+                description: 'Mi-station - 2700m'
+            }
+        ];
+
+        // DONNÉES RÉELLES DES REMONTÉES
+        const liftStatusData = [
+            {
+                location: "Villard Reculas",
+                open: 7,
+                total: 7,
+                status: "all-open",
+                lifts: [
+                    { name: 'Ascenseur Villard', type: 'ASC', status: 'open' },
+                    { name: 'Escargots', type: 'TR', status: 'open' },
+                    { name: 'Cloudit', type: 'TK', status: 'open' },
+                    { name: 'Langaret', type: 'TK', status: 'open' },
+                    { name: 'Petit Prince', type: 'TK', status: 'open' },
+                    { name: 'Tortue', type: 'TK', status: 'open' },
+                    { name: 'Villarais', type: 'TSD', status: 'open' }
+                ]
+            },
+            {
+                location: "Alpe d'Huez - Village",
+                open: 3,
+                total: 3,
+                status: "all-open",
+                lifts: [
+                    { name: 'Alpe Express', type: 'TC', status: 'open' },
+                    { name: 'Huez Express', type: 'TC', status: 'open' },
+                    { name: 'Télécentre', type: 'TC', status: 'open' }
+                ]
+            },
+            {
+                location: "Signal 2100",
+                open: 8,
+                total: 9,
+                status: "partial",
+                lifts: [
+                    { name: 'Grenouilles', type: 'TR', status: 'open' },
+                    { name: 'Babars', type: 'TK', status: 'open' },
+                    { name: 'Ecole 1', type: 'TK', status: 'open' },
+                    { name: 'Ecole 2', type: 'TK', status: 'open' },
+                    { name: 'Poutran', type: 'TK', status: 'period' },
+                    { name: 'Sagnes', type: 'TK', status: 'open' },
+                    { name: 'Stade', type: 'TK', status: 'open' },
+                    { name: 'Signal', type: 'TMX', status: 'open' },
+                    { name: 'Grande Sure', type: 'TS', status: 'open' }
+                ]
+            },
+            {
+                location: "Jeux - Lac Blanc",
+                open: 3,
+                total: 3,
+                status: "all-open",
+                lifts: [
+                    { name: 'Pic Blanc 1 et 2', type: 'TC', status: 'open' },
+                    { name: 'Jeux', type: 'TMX', status: 'open' },
+                    { name: 'Lièvre Blanc', type: 'TS', status: 'open' }
+                ]
+            },
+            {
+                location: "Pic Blanc",
+                open: 1,
+                total: 4,
+                status: "most-closed",
+                lifts: [
+                    { name: 'Pic Blanc 1 et 2', type: 'TC', status: 'open' },
+                    { name: 'Pic Blanc', type: 'TPH', status: 'period' },
+                    { name: 'Herpie', type: 'TS', status: 'forecast' },
+                    { name: 'Lac Blanc', type: 'TS', status: 'period' }
+                ]
+            },
+            {
+                location: "Bergers - Marmotte",
+                open: 10,
+                total: 10,
+                status: "all-open",
+                lifts: [
+                    { name: 'Marmottes 3', type: 'FNT', status: 'open' },
+                    { name: 'Bergers', type: 'TR', status: 'open' },
+                    { name: 'Moutons', type: 'TR', status: 'open' },
+                    { name: 'Rif Nel 1', type: 'TR', status: 'open' },
+                    { name: 'Rif Nel 2', type: 'TR', status: 'open' },
+                    { name: 'Marmottes 2', type: 'TC', status: 'open' },
+                    { name: 'Rif Nel', type: 'TC', status: 'open' },
+                    { name: 'Marmottes 1', type: 'TMX', status: 'open' },
+                    { name: 'Chalvet', type: 'TSD', status: 'open' },
+                    { name: 'Romains', type: 'TSD', status: 'open' }
+                ]
+            },
+            {
+                location: "Oz 3300 - Vaujany",
+                open: 19,
+                total: 19,
+                status: "all-open",
+                lifts: [
+                    { name: 'Ascenseur Eau d\'Olle Express', type: 'FNT', status: 'open' },
+                    { name: 'Montfrais', type: 'TR', status: 'open' },
+                    { name: 'Olmet', type: 'TR', status: 'open' },
+                    { name: 'Alpette', type: 'TC', status: 'open' },
+                    { name: 'Eau d\'Olle Express', type: 'TC', status: 'open' },
+                    { name: 'Enversin', type: 'TC', status: 'open' },
+                    { name: 'Poutran', type: 'TC', status: 'open' },
+                    { name: 'Vaujany-Montfrais', type: 'TC', status: 'open' },
+                    { name: 'Alpette', type: 'TK', status: 'open' },
+                    { name: 'Champ Clotury', type: 'TK', status: 'open' },
+                    { name: 'Clos du Pre', type: 'TK', status: 'open' },
+                    { name: 'Lama', type: 'TK', status: 'open' },
+                    { name: 'Montfrais 1', type: 'TK', status: 'open' },
+                    { name: 'Olmet', type: 'TK', status: 'open' },
+                    { name: 'Clos Giraud', type: 'TMX', status: 'open' },
+                    { name: 'Vaujany-Alpette', type: 'TPH', status: 'open' },
+                    { name: 'Alpette-Rousses', type: 'TPH', status: 'open' },
+                    { name: 'Montfrais', type: 'TS', status: 'open' },
+                    { name: 'Vallonets', type: 'TS', status: 'open' }
+                ]
+            },
+            {
+                location: "Auris-en-Oisans",
+                open: 10,
+                total: 11,
+                status: "partial",
+                lifts: [
+                    { name: 'Bambins', type: 'TR', status: 'forecast' },
+                    { name: 'Bauchets', type: 'TR', status: 'open' },
+                    { name: 'Forêt', type: 'TK', status: 'open' },
+                    { name: 'Piégut', type: 'TK', status: 'open' },
+                    { name: 'Sures', type: 'TMX', status: 'open' },
+                    { name: 'Lombards', type: 'TS', status: 'open' },
+                    { name: 'Maronne', type: 'TS', status: 'open' },
+                    { name: 'Alpauris', type: 'TSD', status: 'open' },
+                    { name: 'Auris Express', type: 'TSD', status: 'open' },
+                    { name: 'Fontfroide', type: 'TSD', status: 'open' },
+                    { name: 'Louvets', type: 'TSD', status: 'open' }
+                ]
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setupWebcams();
+            setupServiceWorker();
+            updateLastUpdated();
+            refreshAllData();
+        });
+
+        function showPage(pageId) {
+            document.querySelectorAll('.section-page').forEach(page => {
+                page.classList.remove('active');
+            });
+            const page = document.getElementById(pageId);
+            if (page) {
+                page.classList.add('active');
+                updateHeader(pageId);
+            }
+            window.scrollTo(0, 0);
+        }
+
+        function updateHeader(pageId) {
+            const title = document.getElementById('headerTitle');
+            const titles = {
+                'webcamsPage': 'Webcams',
+                'roadPage': 'Route',
+                'weatherPage': 'Météo',
+                'slopesPage': 'Pistes'
+            };
+            title.textContent = titles[pageId] || 'AlpeView';
+        }
+
+        function setupWebcams() {
+            const slopeContainer = document.getElementById('slopeWebcams');
+
+            slopeWebcams.forEach((cam, index) => {
+                slopeContainer.appendChild(createWebcamCard(cam, `slope-${index}`));
+            });
+        }
+
+        function createWebcamCard(cam, id) {
+            const card = document.createElement('div');
+            card.className = 'webcam-card';
+            card.id = id;
+
+            if (cam.featured) {
+                card.classList.add('featured');
+            }
+
+            let content = `
+                <div class="webcam-header">
+                    <div class="webcam-title">${cam.name}</div>
+                    ${cam.isLive ? '<span class="live-badge">EN DIRECT</span>' : ''}
+                </div>
+                <div class="webcam-video-container" id="${id}-container">
+            `;
+
+            if (cam.youtubeId) {
+                content += `
+                    <iframe 
+                        class="webcam-video"
+                        src="https://www.youtube.com/embed/${cam.youtubeId}?autoplay=1&mute=1&controls=1&loop=1&playlist=${cam.youtubeId}"
+                        title="${cam.name}"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                `;
+            } else {
+                content += `
+                    <div class="webcam-placeholder">
+                        <div class="webcam-placeholder-icon">📷</div>
+                        <div class="webcam-placeholder-text">
+                            <strong>${cam.name}</strong><br>
+                            ${cam.description}<br>
+                            <span style="font-size: 12px; color: #707070;">Appuyez pour voir en direct</span>
+                        </div>
+                        <button class="webcam-link-btn" onclick="openWebcamUrl('${cam.url}')">
+                            VOIR EN DIRECT
+                        </button>
+                    </div>
+                `;
+            }
+
+            content += `
+                </div>
+                <div class="webcam-time" id="${id}-time">${cam.isLive ? '🔴 Stream en direct' : 'Appuyez pour voir'}</div>
+            `;
+
+            card.innerHTML = content;
+            return card;
+        }
+
+        function openWebcamUrl(url) {
+            window.open(url, '_blank');
+        }
+
+        function refreshWebcams() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+            slopeWebcams.forEach((cam, index) => {
+                const timeEl = document.getElementById(`slope-${index}-time`);
+                if (timeEl) {
+                    timeEl.textContent = cam.isLive ? '🔴 Stream en direct' : `Mis à jour : ${timeStr}`;
+                }
+            });
+        }
+
+        function updateLiftsDisplay() {
+            const container = document.getElementById('liftsContainer');
+            const lastUpdateEl = document.getElementById('liftsLastUpdate');
+            
+            const now = new Date();
+            lastUpdateEl.textContent = `Dernière mise à jour : ${now.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`;
+
+            let html = '';
+
+            liftStatusData.forEach(location => {
+                const statusText = location.status === 'all-open' ? 'TOUT OUVERT' : 
+                                   location.status === 'partial' ? `${location.open}/${location.total} ouverts` :
+                                   `${location.open}/${location.total} ouverts`;
+                
+                const statusClass = location.status;
+
+                html += `
+                    <div class="location-card">
+                        <div class="location-header">
+                            <div class="location-name">${location.location}</div>
+                            <div class="location-stats ${statusClass}">${statusText}</div>
+                        </div>
+                `;
+
+                location.lifts.forEach(lift => {
+                    const liftStatusClass = lift.status;
+                    const liftStatusText = lift.status === 'open' ? 'OUVERT' :
+                                           lift.status === 'closed' ? 'FERMÉ' :
+                                           lift.status === 'period' ? 'HORS SAISON' : 'OUVRE BIENTÔT';
+
+                    html += `
+                        <div class="lift-item">
+                            <div>
+                                <span class="lift-name">${lift.name}</span>
+                                <span class="lift-type">${lift.type}</span>
+                            </div>
+                            <span class="lift-status ${liftStatusClass}">${liftStatusText}</span>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function refreshAllData() {
+            if (isLoading) return;
+
+            isLoading = true;
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('loading');
+            btn.querySelector('span:last-child').textContent = 'CHARGEMENT...';
+
+            try {
+                refreshWebcams();
+                await fetchWeather();
+                updateLiftsDisplay();
+                updateRoadInfo();
+                updateLastUpdated();
+            } catch (error) {
+                console.error('Refresh error:', error);
+            }
+
+            isLoading = false;
+            btn.classList.remove('loading');
+            btn.querySelector('span:last-child').textContent = 'METTRE À JOUR';
+        }
+
+        async function fetchWeather() {
+            const container = document.getElementById('weatherCurrent');
+            const forecastContainer = document.getElementById('weatherForecast');
+
+            try {
+                const lat = 45.09;
+                const lon = 6.07;
+
+                const response = await fetch(
+                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,snowfall_sum&timezone=auto&altitude=1860`
+                );
+
+                if (!response.ok) throw new Error('Weather API error');
+
+                const data = await response.json();
+
+                const temp = Math.round(data.current?.temperature_2m || 0);
+                const wind = data.current?.wind_speed_10m || 0;
+                const weatherCode = data.current?.weather_code || 0;
+                const weatherIcon = getWeatherIcon(weatherCode);
+
+                container.innerHTML = `
+                    <div class="weather-main">
+                        <div class="weather-icon">${weatherIcon}</div>
+                        <div class="weather-temp">${temp}°C</div>
+                    </div>
+                    <div class="weather-details">
+                        <div class="weather-row">
+                            <span class="weather-label">Conditions</span>
+                            <span class="weather-value">${getWeatherDescription(weatherCode)}</span>
+                        </div>
+                        <div class="weather-row">
+                            <span class="weather-label">Vent</span>
+                            <span class="weather-value">${wind} km/h</span>
+                        </div>
+                        <div class="weather-row">
+                            <span class="weather-label">Altitude base</span>
+                            <span class="weather-value">1860m</span>
+                        </div>
+                    </div>
+                `;
+
+                if (data.daily) {
+                    let forecastHTML = '';
+                    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+
+                    for (let i = 0; i < Math.min(3, data.daily.time?.length || 0); i++) {
+                        const date = new Date(data.daily.time[i]);
+                        const dayName = days[date.getDay()];
+                        const icon = getWeatherIcon(data.daily.weather_code[i]);
+                        const maxTemp = Math.round(data.daily.temperature_2m_max[i] || 0);
+                        const minTemp = Math.round(data.daily.temperature_2m_min[i] || 0);
+                        const snow = data.daily.snowfall_sum[i] || 0;
+
+                        forecastHTML += `
+                            <div class="forecast-day">
+                                <div class="forecast-date">${dayName}</div>
+                                <div class="forecast-icon">${icon}</div>
+                                <div class="forecast-temps">${maxTemp}° / ${minTemp}°</div>
+                                <div style="font-size: 11px; color: #707070; margin-top: 4px;">${snow}cm neige</div>
+                            </div>
+                        `;
+                    }
+                    forecastContainer.innerHTML = forecastHTML;
+                }
+
+                document.getElementById('snowBase').textContent = '40-70cm';
+                document.getElementById('snowSummit').textContent = '120-200cm';
+                document.getElementById('lastSnow').textContent = 'Aujourd\'hui';
+                document.getElementById('snowQualityVal').textContent = 'Bonne ⭐⭐⭐';
+
+            } catch (error) {
+                console.error('Weather fetch error:', error);
+                container.innerHTML = `
+                    <div class="weather-current">
+                        <p style="text-align: center; color: #c06060;">Impossible de charger les données météo</p>
+                        <p style="text-align: center; color: #707070; margin-top: 8px;">Veuillez réessayer</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getWeatherIcon(code) {
+            if (code === 0) return '☀️';
+            if (code >= 1 && code <= 3) return '⛅';
+            if (code >= 45 && code <= 48) return '🌫️';
+            if (code >= 51 && code <= 67) return '🌧️';
+            if (code >= 71 && code <= 77) return '❄️';
+            if (code >= 80 && code <= 82) return '🌨️';
+            if (code >= 95) return '⛈️';
+            return '🌤️';
+        }
+
+        function getWeatherDescription(code) {
+            if (code === 0) return 'Ciel dégagé';
+            if (code >= 1 && code <= 3) return 'Partiellement nuageux';
+            if (code >= 45 && code <= 48) return 'Brouillard';
+            if (code >= 51 && code <= 67) return 'Pluie';
+            if (code >= 71 && code <= 77) return 'Neige';
+            if (code >= 80 && code <= 82) return 'Averses de neige';
+            if (code >= 95) return 'Orage';
+            return 'Variable';
+        }
+
+        function updateRoadInfo() {
+            const roadInfo = document.getElementById('roadInfo');
+            const statusDot = document.getElementById('roadStatusDot');
+
+            roadInfo.innerHTML = `
+                <p style="margin-bottom: 8px;"><strong>D1091 Grenoble → Vaujany</strong></p>
+                <p>• Route OUVERTE</p>
+                <p>• Chaînes/pneus hiver obligatoires depuis Rochetaillée</p>
+                <p>• Vérifiez les conditions au col du Lautaret</p>
+                <p style="margin-top: 8px; color: #707070;">Consultez <a href="https://www.itinisere.fr" style="color: #c0c0c0;">www.itinisere.fr</a> pour les mises à jour en temps réel</p>
+            `;
+
+            statusDot.className = 'status-dot open';
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+
+            const homeUpdate = document.getElementById('homeLastUpdated');
+            if (homeUpdate) {
+                homeUpdate.textContent = `Dernière mise à jour : ${dateStr} ${timeStr}`;
+            }
+        }
+
+        window.addEventListener('online', () => {
+            document.getElementById('offlineBanner').classList.remove('show');
+        });
+
+        window.addEventListener('offline', () => {
+            document.getElementById('offlineBanner').classList.add('show');
+        });
+
+        if (!navigator.onLine) {
+            document.getElementById('offlineBanner').classList.add('show');
+        }
+
+        function setupServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered');
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            }
+        }
+    </script>
+</body>
+</html>
